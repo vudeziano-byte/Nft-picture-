@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>BlueMarket — NFT-каталог</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #121a2c;
+      --panel2: #18233a;
+      --text: #f4f7ff;
+      --muted: #9aa8c2;
+      --blue: #3978ff;
+      --blue2: #245fe0;
+      --border: rgba(255,255,255,.09);
+      --green: #5cdea0;
+      --red: #ff7185;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(ellipse at top, rgba(41,91,190,.18), transparent 38%),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app { max-width: 1100px; margin: auto; min-height: 100vh; padding: 16px; }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+      padding: 8px 0 18px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: grid; place-items: center; background: var(--blue); font-size: 19px;
+    }
+
+    .header-actions { display: flex; align-items: center; gap: 9px; }
+    .balance, .profile-button, .button, .sort, .tab, .secondary {
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .balance { padding: 10px 12px; white-space: nowrap; }
+    .profile-button, .button, .secondary { padding: 10px 14px; }
+    .button { background: var(--blue); border-color: transparent; font-weight: 700; }
+    .button:hover { background: var(--blue2); }
+    .secondary:hover, .profile-button:hover, .tab:hover { background: var(--panel2); }
+    .button:disabled { opacity: .55; cursor: not-allowed; }
+
+    nav {
+      display: flex; gap: 8px; overflow-x: auto; padding: 0 0 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab { padding: 9px 14px; white-space: nowrap; color: var(--muted); }
+    .tab.active { background: rgba(57,120,255,.18); border-color: rgba(57,120,255,.45); color: white; }
+
+    main { padding: 22px 0; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    h1 { font-size: 25px; margin: 0; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sort, .input { padding: 10px 12px; outline: none; }
+    .input { width: 100%; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+    .sort:focus, .input:focus { border-color: var(--blue); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+    .card { overflow: hidden; background: var(--panel); border: 1px solid var(--border); border-radius: 17px; }
+    .art {
+      aspect-ratio: 1 / 1;
+      display: grid; place-items: center;
+      font-size: 75px;
+      background: linear-gradient(145deg, #213d74, #171b39 62%, #37245c);
+    }
+    .card-body { padding: 13px; }
+    .card-title-row { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+    .card h3 { margin: 0 0 5px; font-size: 16px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .rarity { color: #b8caff; font-size: 12px; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 13px; }
+    .price { font-weight: 800; white-space: nowrap; }
+    .price span { color: #8cb4ff; }
+    .small-button { padding: 8px 11px; border-radius: 10px; font-size: 13px; }
+
+    .panel { max-width: 680px; padding: 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 17px; }
+    .profile-top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .avatar { width: 62px; height: 62px; display: grid; place-items: center; border-radius: 50%; background: var(--panel2); font-size: 30px; }
+    .profile-links { display: grid; gap: 9px; margin-top: 18px; }
+    .profile-links button { text-align: left; }
+    .upload-form { display: grid; gap: 12px; max-width: 520px; }
+    .empty { padding: 35px 15px; color: var(--muted); text-align: center; background: var(--panel); border: 1px dashed var(--border); border-radius: 16px; }
+    .notice { margin-top: 12px; color: var(--muted); font-size: 13px; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 520px) {
+      .app { padding: 12px; }
+      .brand-name { display: none; }
+      .balance { padding: 9px; font-size: 13px; }
+      .profile-button { padding: 9px 10px; }
+      h1 { font-size: 22px; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .card-body { padding: 10px; }
+      .card-footer { align-items: stretch; flex-direction: column; }
+      .card-footer .button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-label="Место для логотипа">◆</div>
+      <span class="brand-name">BlueMarket</span>
+    </div>
+    <div class="header-actions">
+      <div class="balance">⭐ <span id="balance">250</span></div>
+      <button class="profile-button" id="headerProfile">👤 Профиль</button>
+    </div>
+  </header>
+
+  <nav id="nav">
+    <button class="tab active" data-page="catalog">Каталог</button>
+    <button class="tab" data-page="collections">Коллекции</button>
+    <button class="tab" data-page="sell">Продажи</button>
+  </nav>
+
+  <main id="content"></main>
+</div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  tg?.ready();
+  tg?.expand();
+
+  const state = {
+    page: "catalog",
+    section: "collection",
+    balance: 250,
+    username: tg?.initDataUnsafe?.user?.username || "Гость",
+    avatar: tg?.initDataUnsafe?.user?.photo_url || "",
+    items: [
+      { id: 1, name: "Космический кот", collection: "Космические", rarity: 92, price: 35, emoji: "🐈‍⬛", owner: "seller", active: true },
+      { id: 2, name: "Синий феникс", collection: "Мифические", rarity: 78, price: 60, emoji: "🦅", owner: "seller", active: true },
+      { id: 3, name: "Неоновый город", collection: "Пейзажи", rarity: 54, price: 22, emoji: "🌃", owner: "seller", active: true },
+      { id: 4, name: "Лунный кролик", collection: "Космические", rarity: 99, price: 110, emoji: "🐇", owner: "seller", active: true },
+      { id: 5, name: "Кристальный цветок", collection: "Природа", rarity: 43, price: 18, emoji: "💠", owner: "seller", active: true },
+      { id: 6, name: "Золотая маска", collection: "Мифические", rarity: 86, price: 75, emoji: "🎭", owner: "seller", active: true }
+    ],
+    owned: [],
+    deals: []
+  };
+
+  const content = document.getElementById("content");
+  const balanceNode = document.getElementById("balance");
+
+  function setPage(page) {
+    state.page = page;
+    document.querySelectorAll(".tab").forEach(tab =>
+      tab.classList.toggle("active", tab.dataset.page === page)
+    );
+    render();
+  }
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => setPage(tab.dataset.page));
+  });
+
+  document.getElementById("headerProfile").addEventListener("click", () => {
+    state.page = "profile";
+    document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+    render();
+  });
+
+  function itemCard(item, actionLabel, action, showSeller = false) {
+    return `
+      <article class="card">
+        <div class="art">${item.emoji}</div>
+        <div class="card-body">
+          <div class="card-title-row">
+            <div>
+              <h3>${escapeHtml(item.name)}</h3>
+              <div class="muted">${escapeHtml(item.collection)}</div>
+            </div>
+            <span class="rarity">◆ ${item.rarity}</span>
+          </div>
+          <div class="card-footer">
+            <div class="price">⭐ ${item.price}</div>
+            <button class="button small-button" data-action="${action}" data-id="${item.id}">${actionLabel}</button>
+          </div>
+          ${showSeller ? '<div class="notice">Продавец: пользователь</div>' : ""}
+        </div>
+      </article>`;
+  }
+
+  function renderCatalog() {
+    const collections = [...new Set(state.items.filter(x => x.active).map(x => x.collection))];
+    const collectionOptions = collections.map(name =>
+      `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+    ).join("");
+
+    content.innerHTML = `
+      <div class="toolbar">
+        <h1>${state.section === "collection" ? "Каталог" : "Каталог"}</h1>
+        <div class="filters">
+          <select class="sort" id="collectionFilter">
+            <option value="all">Все коллекции</option>${collectionOptions}
+          </select>
+          <select class="sort" id="sortFilter">
+            <option value="new">Сначала новые</option>
+            <option value="priceUp">Цена: сначала ниже</option>
+            <option value="priceDown">Цена: сначала выше</option>
+            <option value="rarity">По редкости</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid" id="itemGrid"></div>`;
+
+    const collectionFilter = document.getElementById("collectionFilter");
+    const sortFilter = document.getElementById("sortFilter");
+
+    function updateGrid() {
+      let items = state.items.filter(item => item.active);
+      if (collectionFilter.value !== "all") {
+        items = items.filter(item => item.collection === collectionFilter.value);
+      }
+      if (sortFilter.value === "priceUp") items.sort((a, b) => a.price - b.price);
+      if (sortFilter.value === "priceDown") items.sort((a, b) => b.price - a.price);
+      if (sortFilter.value === "rarity") items.sort((a, b) => b.rarity - a.rarity);
+
+      document.getElementById("itemGrid").innerHTML = items.length
+        ? items.map(item => itemCard(item, "Купить", "buy", true)).join("")
+        : '<div class="empty">В этой коллекции пока нет работ.</div>';
+    }
+
+    collectionFilter.addEventListener("change", updateGrid);
+    sortFilter.addEventListener("change", updateGrid);
+    updateGrid();
+  }
+
+  function renderCollections() {
+    const names = [...new Set(state.items.map(item => item.collection))];
+    content.innerHTML = `
+      <div class="toolbar"><h1>Коллекции</h1></div>
+      <div class="grid">
+        ${names.map(name => {
+          const count = state.items.filter(item => item.collection === name).length;
+          return `<button class="panel collection-card" data-collection="${escapeHtml(name)}">
+            <div style="font-size:34px">🖼️</div>
+            <h3>${escapeHtml(name)}</h3>
+            <div class="muted">${count} работ</div>
+          </button>`;
+        }).join("")}
+      </div>`;
+    content.querySelectorAll("[data-collection]").forEach(button => {
+      button.addEventListener("click", () => {
+        setPage("catalog");
+        setTimeout(() => {
+          const select = document.getElementById("collectionFilter");
+          if (select) { select.value = button.dataset.collection; select.dispatchEvent(new Event("change")); }
+        }, 0);
+      });
+    });
+  }
+
+  function renderSell() {
+    const mySales = state.items.filter(item => item.owner === "me" && item.active);
+    content.innerHTML = `
+      <div class="toolbar"><h1>Продажи</h1></div>
+      <div class="panel">
+        <h2 style="margin-top:0">Выставить работу</h2>
+        <form class="upload-form" id="uploadForm">
+          <input class="input" name="name" placeholder="Название работы" required maxlength="50">
+          <input class="input" name="collection" placeholder="Название коллекции" required maxlength="40">
+          <input class="input" name="price" type="number" min="1" max="1000000" placeholder="Цена в Stars" required>
+          <select class="input" name="rarity">
+            <option value="25">Обычная редкость</option>
+            <option value="50">Необычная редкость</option>
+            <option value="75">Редкая</option>
+            <option value="95">Очень редкая</option>
+          </select>
+          <input class="input" name="image" type="file" accept="image/*" required>
+          <button class="button" type="submit">Добавить в каталог</button>
+        </form>
+        <div class="notice">В демо-версии картинка не загружается на сервер и сохраняется только как локальное превью.</div>
+      </div>
+      <h2 style="margin:24px 0 14px">Мои активные продажи</h2>
+      <div class="grid">
+        ${mySales.length ? mySales.map(item => itemCard(item, "Снять", "remove")).join("") : '<div class="empty">Активных продаж пока нет.</div>'}
+      </div>`;
+
+    document.getElementById("uploadForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const file = form.get("image");
+      const item = {
+        id: Date.now(),
+        name: String(form.get("name")),
+        collection: String(form.get("collection")),
+        price: Number(form.get("price")),
+        rarity: Number(form.get("rarity")),
+        emoji: "🖼️",
+        owner: "me",
+        active: true,
+        imageName: file?.name || ""
+      };
+      state.items.unshift(item);
+      tg?.HapticFeedback?.notificationOccurred("success");
+      render();
+    });
+  }
+
+  function renderProfile(section = "overview") {
+    const user = tg?.initDataUnsafe?.user;
+    const displayName = user
+      ? [user.first_name, user.last_name].filter(Boolean).join(" ")
+      : state.username;
+
+    const avatar = state.avatar
+      ? `<img src="${escapeAttr(state.avatar)}" alt="" style="width:62px;height:62px;border-radius:50
+
+*(This answer reached its length limit. Send “continue” to get the rest.)*
