@@ -474,14 +474,4 @@
 </script>
 </body>
 </html>
-  const OWNER_USERNAME = "marvel";
-
-const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-const isOwner =
-  user?.username?.toLowerCase() === OWNER_USERNAME.toLowerCase();
-
-if (isOwner) {
-  document.querySelector("#owner-controls")?.classList.remove("hidden");
-}
-
-
+  
