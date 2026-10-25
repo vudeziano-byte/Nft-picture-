@@ -336,6 +336,144 @@
       : state.username;
 
     const avatar = state.avatar
-      ? `<img src="${escapeAttr(state.avatar)}" alt="" style="width:62px;height:62px;border-radius:50
+        ? `<img src="${escapeAttr(state.avatar)}" alt=""
+          style="width:62px;height:62px;border-radius:50%;object-fit:cover">`
+      : `<div class="avatar">👤</div>`;
 
-*(This answer reached its length limit. Send “continue” to get the rest.)*
+    const myItems = state.items.filter(item => item.owner === "me");
+    const sectionNames = {
+      overview: "Профиль",
+      items: "Мои NFT",
+      deals: "История операций"
+    };
+
+    let sectionContent = "";
+
+    if (section === "items") {
+      sectionContent = myItems.length
+        ? `<div class="grid">
+            ${myItems.map(item =>
+              item.active
+                ? itemCard(item, "Снять с продажи", "remove")
+                : itemCard(item, "Выставить", "list")
+            ).join("")}
+          </div>`
+        : '<div class="empty">У вас пока нет NFT.</div>';
+    } else if (section === "deals") {
+      sectionContent = state.deals.length
+        ? `<div class="panel">
+            ${state.deals.map(deal => `
+              <p>
+                ${escapeHtml(deal.type)}: <strong>${escapeHtml(deal.name)}</strong>
+                — ⭐ ${deal.price}
+                <span class="muted">(${escapeHtml(deal.date)})</span>
+              </p>
+            `).join("")}
+          </div>`
+        : '<div class="empty">Операций пока нет.</div>';
+    } else {
+      sectionContent = `
+        <div class="panel">
+          <div class="profile-top">
+            ${avatar}
+            <div>
+              <h2 style="margin:0 0 4px">${escapeHtml(displayName)}</h2>
+              <div class="muted">@${escapeHtml(state.username)}</div>
+            </div>
+          </div>
+          <div>Баланс: <strong>⭐ ${state.balance}</strong></div>
+          <div class="notice">
+            Это демо-профиль. Покупки здесь не списывают реальные Telegram Stars.
+          </div>
+        </div>`;
+    }
+
+    content.innerHTML = `
+      <div class="toolbar"><h1>${sectionNames[section] || "Профиль"}</h1></div>
+      <div class="profile-links">
+        <button class="secondary" data-profile-section="overview">Обзор профиля</button>
+        <button class="secondary" data-profile-section="items">Мои NFT (${myItems.length})</button>
+        <button class="secondary" data-profile-section="deals">История операций</button>
+      </div>
+      <div style="margin-top:18px">${sectionContent}</div>`;
+  }
+
+  function render() {
+    balanceNode.textContent = state.balance;
+
+    if (state.page === "catalog") renderCatalog();
+    else if (state.page === "collections") renderCollections();
+    else if (state.page === "sell") renderSell();
+    else if (state.page === "profile") renderProfile();
+  }
+
+  content.addEventListener("click", event => {
+    const sectionButton = event.target.closest("[data-profile-section]");
+    if (sectionButton) {
+      renderProfile(sectionButton.dataset.profileSection);
+      return;
+    }
+
+    const actionButton = event.target.closest("[data-action]");
+    if (!actionButton) return;
+
+    const item = state.items.find(
+      current => current.id === Number(actionButton.dataset.id)
+    );
+    if (!item) return;
+
+    const action = actionButton.dataset.action;
+
+    if (action === "buy") {
+      if (item.owner === "me") {
+        alert("Эта работа уже принадлежит вам.");
+        return;
+      }
+
+      if (state.balance < item.price) {
+        alert("Недостаточно Stars для покупки.");
+        return;
+      }
+
+      if (!confirm(`Купить «${item.name}» за ⭐ ${item.price}?`)) return;
+
+      state.balance -= item.price;
+      item.owner = "me";
+      item.active = false;
+      state.deals.unshift({
+        type: "Покупка",
+        name: item.name,
+        price: item.price,
+        date: new Date().toLocaleDateString("ru-RU")
+      });
+    } else if (action === "remove") {
+      item.active = false;
+    } else if (action === "list") {
+      item.active = true;
+    }
+
+    tg?.HapticFeedback?.notificationOccurred("success");
+    render();
+  });
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[character]);
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value);
+  }
+
+  render();
+</script>
+</body>
+</html>
+  
+
+
