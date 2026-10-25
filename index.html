@@ -331,11 +331,11 @@
 
   function renderProfile(section = "overview") {
     const user = tg?.initDataUnsafe?.user;
-    const displayName     const isOwner = user?.id === 1780243242;
-    const ownerCrown = isOwner ? " 👑" : ""; = user
+    const displayName = user
       ? [user.first_name, user.last_name].filter(Boolean).join(" ")
       : state.username;
-
+    const isOwner = user?.id === 123456789;
+    const ownerCrown = isOwner ? " 👑" : "";
     const avatar = state.avatar
         ? `<img src="${escapeAttr(state.avatar)}" alt=""
           style="width:62px;height:62px;border-radius:50%;object-fit:cover">`
