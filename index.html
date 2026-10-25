@@ -331,7 +331,8 @@
 
   function renderProfile(section = "overview") {
     const user = tg?.initDataUnsafe?.user;
-    const displayName = user
+    const displayName     const isOwner = user?.id === 1780243242;
+    const ownerCrown = isOwner ? " 👑" : ""; = user
       ? [user.first_name, user.last_name].filter(Boolean).join(" ")
       : state.username;
 
