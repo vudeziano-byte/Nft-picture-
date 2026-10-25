@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1020">
-  <title>BlueMarket — NFT-каталог</title>
+  <title>BlueMarket</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -12,511 +12,760 @@
     :root {
       color-scheme: dark;
       --bg: #0b1020;
-      --panel: #121a2c;
-      --panel2: #18233a;
-      --text: #f4f7ff;
-      --muted: #9aa8c2;
-      --blue: #3978ff;
-      --blue2: #245fe0;
-      --border: rgba(255,255,255,.09);
-      --green: #5cdea0;
-      --red: #ff7185;
+      --panel: #111a2e;
+      --panel-light: #18243c;
+      --text: #eef4ff;
+      --muted: #94a3bd;
+      --blue: #58a6ff;
+      --border: rgba(255, 255, 255, .09);
+      --green: #59d9a2;
+      --danger: #ff7f91;
     }
 
     * { box-sizing: border-box; }
 
     body {
       margin: 0;
+      min-height: 100vh;
       background:
-        radial-gradient(ellipse at top, rgba(41,91,190,.18), transparent 38%),
+        radial-gradient(ellipse at top, rgba(36, 84, 155, .18), transparent 50%),
         var(--bg);
       color: var(--text);
-      font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     button, input, select { font: inherit; }
-    button { cursor: pointer; }
+    button { color: inherit; }
 
-    .app { max-width: 1100px; margin: auto; min-height: 100vh; padding: 16px; }
+    .app {
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      padding: 20px 18px 110px;
+    }
 
-    header {
+    .topbar {
       display: flex;
       align-items: center;
-      gap: 12px;
       justify-content: space-between;
-      padding: 8px 0 18px;
+      gap: 16px;
+      margin-bottom: 22px;
     }
 
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; }
-    .logo {
-      width: 38px; height: 38px; border-radius: 12px;
-      display: grid; place-items: center; background: var(--blue); font-size: 19px;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 20px;
+      font-weight: 800;
     }
 
-    .header-actions { display: flex; align-items: center; gap: 9px; }
-    .balance, .profile-button, .button, .sort, .tab, .secondary {
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #2989ff, #795dff);
+      box-shadow: 0 8px 28px rgba(41, 137, 255, .25);
+    }
+
+    .balance {
+      padding: 9px 13px;
       border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .balance span { color: #ffd66b; }
+
+    main { min-height: 65vh; }
+
+    h1 { margin: 0; font-size: 25px; }
+    h2 { font-size: 19px; }
+    h3 { margin: 0; font-size: 16px; }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 0 18px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sort, .input {
+      width: 100%;
+      min-height: 43px;
+      padding: 10px 12px;
       color: var(--text);
+      background: #0d1527;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+    }
+
+    .sort { width: auto; max-width: 190px; }
+    .input:focus, .sort:focus { border-color: var(--blue); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+      gap: 14px;
+    }
+
+    .card, .panel {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(24, 36, 60, .94), rgba(17, 26, 46, .98));
+    }
+
+    .card { min-width: 0; }
+
+    .art {
+      display: grid;
+      place-items: center;
+      height: 180px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(98, 163, 255, .25), transparent 55%),
+        linear-gradient(135deg, #182b49, #11182b);
+      font-size: 65px;
+    }
+
+    .card-body { padding: 14px; }
+    .card-title-row, .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title-row { align-items: flex-start; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .rarity { color: #9bc7ff; white-space: nowrap; font-size: 13px; }
+    .card-footer { margin-top: 15px; }
+    .price { color: #ffd66b; font-weight: 800; }
+
+    .button {
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #338fff, #6864ff);
+      color: #fff;
+      font-weight: 750;
+      cursor: pointer;
+      transition: filter .15s, transform .15s;
+    }
+
+    .button:hover { filter: brightness(1.1); }
+    .button:active { transform: scale(.98); }
+    .small-button { min-height: 36px; padding: 7px 12px; }
+    .button.secondary { background: var(--panel-light); border: 1px solid var(--border); }
+    .button.danger { background: rgba(255, 127, 145, .16); color: #ff9aaa; }
+
+    .panel { padding: 17px; }
+    .collection-tile {
+      width: 100%;
+      min-height: 145px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .collection-icon { font-size: 34px; }
+    .notice {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 11px;
+      background: rgba(88, 166, 255, .09);
+      color: #b7d7ff;
+      font-size: 13px;
+    }
+
+    .upload-form { display: grid; gap: 10px; }
+    .section-title { margin: 25px 0 13px; }
+    .empty {
+      grid-column: 1 / -1;
+      padding: 25px;
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .profile-head {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 16px;
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      flex: 0 0 64px;
+      overflow: hidden;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #318dff, #845dff);
+      font-size: 27px;
+    }
+
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-name { display: flex; align-items: center; gap: 7px; }
+    .crown { color: #ffd66b; font-size: 16px; }
+
+    .profile-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+
+    .profile-tab, .tab {
+      padding: 10px 13px;
+      border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
     }
 
-    .balance { padding: 10px 12px; white-space: nowrap; }
-    .profile-button, .button, .secondary { padding: 10px 14px; }
-    .button { background: var(--blue); border-color: transparent; font-weight: 700; }
-    .button:hover { background: var(--blue2); }
-    .secondary:hover, .profile-button:hover, .tab:hover { background: var(--panel2); }
-    .button:disabled { opacity: .55; cursor: not-allowed; }
+    .profile-tab.active, .tab.active {
+      background: rgba(88, 166, 255, .15);
+      border-color: rgba(88, 166, 255, .4);
+      color: #d9ebff;
+    }
 
-    nav {
-      display: flex; gap: 8px; overflow-x: auto; padding: 0 0 16px;
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .stat {
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .025);
+    }
+
+    .stat strong { display: block; font-size: 20px; }
+    .stat span { color: var(--muted); font-size: 12px; }
+
+    .deal {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 0;
       border-bottom: 1px solid var(--border);
     }
 
-    .tab { padding: 9px 14px; white-space: nowrap; color: var(--muted); }
-    .tab.active { background: rgba(57,120,255,.18); border-color: rgba(57,120,255,.45); color: white; }
+    .deal:last-child { border-bottom: 0; }
 
-    main { padding: 22px 0; }
-    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
-    h1 { font-size: 25px; margin: 0; }
-    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
-    .sort, .input { padding: 10px 12px; outline: none; }
-    .input { width: 100%; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
-    .sort:focus, .input:focus { border-color: var(--blue); }
-
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-    .card { overflow: hidden; background: var(--panel); border: 1px solid var(--border); border-radius: 17px; }
-    .art {
-      aspect-ratio: 1 / 1;
-      display: grid; place-items: center;
-      font-size: 75px;
-      background: linear-gradient(145deg, #213d74, #171b39 62%, #37245c);
+    .bottom-nav {
+      position: fixed;
+      z-index: 5;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: rgba(8, 13, 25, .94);
+      backdrop-filter: blur(16px);
     }
-    .card-body { padding: 13px; }
-    .card-title-row { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
-    .card h3 { margin: 0 0 5px; font-size: 16px; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .rarity { color: #b8caff; font-size: 12px; }
-    .card-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 13px; }
-    .price { font-weight: 800; white-space: nowrap; }
-    .price span { color: #8cb4ff; }
-    .small-button { padding: 8px 11px; border-radius: 10px; font-size: 13px; }
 
-    .panel { max-width: 680px; padding: 18px; background: var(--panel); border: 1px solid var(--border); border-radius: 17px; }
-    .profile-top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
-    .avatar { width: 62px; height: 62px; display: grid; place-items: center; border-radius: 50%; background: var(--panel2); font-size: 30px; }
-    .profile-links { display: grid; gap: 9px; margin-top: 18px; }
-    .profile-links button { text-align: left; }
-    .upload-form { display: grid; gap: 12px; max-width: 520px; }
-    .empty { padding: 35px 15px; color: var(--muted); text-align: center; background: var(--panel); border: 1px dashed var(--border); border-radius: 16px; }
-    .notice { margin-top: 12px; color: var(--muted); font-size: 13px; }
-    .hidden { display: none !important; }
+    .tab { min-width: 78px; text-align: center; }
 
-    @media (max-width: 520px) {
-      .app { padding: 12px; }
-      .brand-name { display: none; }
-      .balance { padding: 9px; font-size: 13px; }
-      .profile-button { padding: 9px 10px; }
-      h1 { font-size: 22px; }
+    @media (max-width: 600px) {
+      .app { padding: 15px 13px 100px; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .filters { width: 100%; }
+      .sort { flex: 1; max-width: none; }
       .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-      .card-body { padding: 10px; }
-      .card-footer { align-items: stretch; flex-direction: column; }
+      .art { height: 145px; }
+      .card-body { padding: 11px; }
+      .card-footer { align-items: flex-start; flex-direction: column; }
       .card-footer .button { width: 100%; }
+      .stats { grid-template-columns: 1fr; }
+      .tab { min-width: 0; flex: 1; padding: 10px 6px; font-size: 12px; }
     }
   </style>
 </head>
-<body>
-<div class="app">
-  <header>
-    <div class="brand">
-      <div class="logo" aria-label="Место для логотипа">◆</div>
-      <span class="brand-name">BlueMarket</span>
-    </div>
-    <div class="header-actions">
-      <div class="balance">⭐ <span id="balance">250</span></div>
-      <button class="profile-button" id="headerProfile">👤 Профиль</button>
-    </div>
-  </header>
 
-  <nav id="nav">
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">💎</div>
+        <span>BlueMarket</span>
+      </div>
+      <div class="balance">Баланс: <span id="balance">⭐ 250</span></div>
+    </header>
+
+    <main id="content"></main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Основная навигация">
     <button class="tab active" data-page="catalog">Каталог</button>
     <button class="tab" data-page="collections">Коллекции</button>
     <button class="tab" data-page="sell">Продажи</button>
+    <button class="tab" data-page="profile">Профиль</button>
   </nav>
 
-  <main id="content"></main>
-</div>
+  <script>
+    const tg = window.Telegram?.WebApp;
+    tg?.ready();
+    tg?.expand();
 
-<script>
-  const tg = window.Telegram?.WebApp;
-  tg?.ready();
-  tg?.expand();
+    
+    const OWNER_USERNAME = "marvel";
 
-  const state = {
-    page: "catalog",
-    section: "collection",
-    balance: 250,
-    username: tg?.initDataUnsafe?.user?.username || "Гость",
-    avatar: tg?.initDataUnsafe?.user?.photo_url || "",
-    items: [
+    const telegramUser = tg?.initDataUnsafe?.user || null;
+    const currentUsername = (telegramUser?.username || "гость").toLowerCase();
+    const isOwner = Boolean(
+      telegramUser?.username &&
+      OWNER_USERNAME !== "marvel" &&
+      currentUsername === OWNER_USERNAME.toLowerCase()
+    );
+
+    const starterItems = [
       { id: 1, name: "Космический кот", collection: "Космические", rarity: 92, price: 35, emoji: "🐈‍⬛", owner: "seller", active: true },
       { id: 2, name: "Синий феникс", collection: "Мифические", rarity: 78, price: 60, emoji: "🦅", owner: "seller", active: true },
       { id: 3, name: "Неоновый город", collection: "Пейзажи", rarity: 54, price: 22, emoji: "🌃", owner: "seller", active: true },
       { id: 4, name: "Лунный кролик", collection: "Космические", rarity: 99, price: 110, emoji: "🐇", owner: "seller", active: true },
       { id: 5, name: "Кристальный цветок", collection: "Природа", rarity: 43, price: 18, emoji: "💠", owner: "seller", active: true },
       { id: 6, name: "Золотая маска", collection: "Мифические", rarity: 86, price: 75, emoji: "🎭", owner: "seller", active: true }
-    ],
-    owned: [],
-    deals: []
-  };
+    ];
 
-  const content = document.getElementById("content");
-  const balanceNode = document.getElementById("balance");
-
-  function setPage(page) {
-    state.page = page;
-    document.querySelectorAll(".tab").forEach(tab =>
-      tab.classList.toggle("active", tab.dataset.page === page)
-    );
-    render();
-  }
-
-  document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => setPage(tab.dataset.page));
-  });
-
-  document.getElementById("headerProfile").addEventListener("click", () => {
-    state.page = "profile";
-    document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-    render();
-  });
-
-  function itemCard(item, actionLabel, action, showSeller = false) {
-    return `
-      <article class="card">
-        <div class="art">${item.emoji}</div>
-        <div class="card-body">
-          <div class="card-title-row">
-            <div>
-              <h3>${escapeHtml(item.name)}</h3>
-              <div class="muted">${escapeHtml(item.collection)}</div>
-            </div>
-            <span class="rarity">◆ ${item.rarity}</span>
-          </div>
-          <div class="card-footer">
-            <div class="price">⭐ ${item.price}</div>
-            <button class="button small-button" data-action="${action}" data-id="${item.id}">${actionLabel}</button>
-          </div>
-          ${showSeller ? '<div class="notice">Продавец: пользователь</div>' : ""}
-        </div>
-      </article>`;
-  }
-
-  function renderCatalog() {
-    const collections = [...new Set(state.items.filter(x => x.active).map(x => x.collection))];
-    const collectionOptions = collections.map(name =>
-      `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
-    ).join("");
-
-    content.innerHTML = `
-      <div class="toolbar">
-        <h1>${state.section === "collection" ? "Каталог" : "Каталог"}</h1>
-        <div class="filters">
-          <select class="sort" id="collectionFilter">
-            <option value="all">Все коллекции</option>${collectionOptions}
-          </select>
-          <select class="sort" id="sortFilter">
-            <option value="new">Сначала новые</option>
-            <option value="priceUp">Цена: сначала ниже</option>
-            <option value="priceDown">Цена: сначала выше</option>
-            <option value="rarity">По редкости</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid" id="itemGrid"></div>`;
-
-    const collectionFilter = document.getElementById("collectionFilter");
-    const sortFilter = document.getElementById("sortFilter");
-
-    function updateGrid() {
-      let items = state.items.filter(item => item.active);
-      if (collectionFilter.value !== "all") {
-        items = items.filter(item => item.collection === collectionFilter.value);
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("blueMarketState"));
+        if (saved && Array.isArray(saved.items)) {
+          return {
+            page: saved.page || "catalog",
+            profileSection: saved.profileSection || "overview",
+            balance: Number(saved.balance) || 250,
+            items: saved.items,
+            owned: Array.isArray(saved.owned) ? saved.owned : [],
+            deals: Array.isArray(saved.deals) ? saved.deals : [],
+            collectionFilter: "all"
+          };
+        }
+      } catch (error) {
+        console.warn("Не удалось загрузить сохранённые данные:", error);
       }
-      if (sortFilter.value === "priceUp") items.sort((a, b) => a.price - b.price);
-      if (sortFilter.value === "priceDown") items.sort((a, b) => b.price - a.price);
-      if (sortFilter.value === "rarity") items.sort((a, b) => b.rarity - a.rarity);
 
-      document.getElementById("itemGrid").innerHTML = items.length
-        ? items.map(item => itemCard(item, "Купить", "buy", true)).join("")
-        : '<div class="empty">В этой коллекции пока нет работ.</div>';
+      return {
+        page: "catalog",
+        profileSection: "overview",
+        balance: 250,
+        items: starterItems.map(item => ({ ...item })),
+        owned: [],
+        deals: [],
+        collectionFilter: "all"
+      };
     }
 
-    collectionFilter.addEventListener("change", updateGrid);
-    sortFilter.addEventListener("change", updateGrid);
-    updateGrid();
-  }
+    const state = loadState();
+    const content = document.getElementById("content");
+    const balanceNode = document.getElementById("balance");
 
-  function renderCollections() {
-    const names = [...new Set(state.items.map(item => item.collection))];
-    content.innerHTML = `
-      <div class="toolbar"><h1>Коллекции</h1></div>
-      <div class="grid">
-        ${names.map(name => {
-          const count = state.items.filter(item => item.collection === name).length;
-          return `<button class="panel collection-card" data-collection="${escapeHtml(name)}">
-            <div style="font-size:34px">🖼️</div>
-            <h3>${escapeHtml(name)}</h3>
-            <div class="muted">${count} работ</div>
-          </button>`;
-        }).join("")}
-      </div>`;
-    content.querySelectorAll("[data-collection]").forEach(button => {
-      button.addEventListener("click", () => {
-        setPage("catalog");
-        setTimeout(() => {
-          const select = document.getElementById("collectionFilter");
-          if (select) { select.value = button.dataset.collection; select.dispatchEvent(new Event("change")); }
-        }, 0);
+    function saveState() {
+      try {
+        localStorage.setItem("blueMarketState", JSON.stringify(state));
+      } catch (error) {
+        alert("Не удалось сохранить данные в браузере.");
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function updateBalance() {
+      balanceNode.textContent = `⭐ ${state.balance}`;
+    }
+
+    function setPage(page) {
+      state.page = page;
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.page === page);
       });
-    });
-  }
-
-  function renderSell() {
-    const mySales = state.items.filter(item => item.owner === "me" && item.active);
-    content.innerHTML = `
-      <div class="toolbar"><h1>Продажи</h1></div>
-      <div class="panel">
-        <h2 style="margin-top:0">Выставить работу</h2>
-        <form class="upload-form" id="uploadForm">
-          <input class="input" name="name" placeholder="Название работы" required maxlength="50">
-          <input class="input" name="collection" placeholder="Название коллекции" required maxlength="40">
-          <input class="input" name="price" type="number" min="1" max="1000000" placeholder="Цена в Stars" required>
-          <select class="input" name="rarity">
-            <option value="25">Обычная редкость</option>
-            <option value="50">Необычная редкость</option>
-            <option value="75">Редкая</option>
-            <option value="95">Очень редкая</option>
-          </select>
-          <input class="input" name="image" type="file" accept="image/*" required>
-          <button class="button" type="submit">Добавить в каталог</button>
-        </form>
-        <div class="notice">В демо-версии картинка не загружается на сервер и сохраняется только как локальное превью.</div>
-      </div>
-      <h2 style="margin:24px 0 14px">Мои активные продажи</h2>
-      <div class="grid">
-        ${mySales.length ? mySales.map(item => itemCard(item, "Снять", "remove")).join("") : '<div class="empty">Активных продаж пока нет.</div>'}
-      </div>`;
-
-    document.getElementById("uploadForm").addEventListener("submit", event => {
-      event.preventDefault();
-      const form = new FormData(event.currentTarget);
-      const file = form.get("image");
-      const item = {
-        id: Date.now(),
-        name: String(form.get("name")),
-        collection: String(form.get("collection")),
-        price: Number(form.get("price")),
-        rarity: Number(form.get("rarity")),
-        emoji: "🖼️",
-        owner: "me",
-        active: true,
-        imageName: file?.name || ""
-      };
-      state.items.unshift(item);
-      tg?.HapticFeedback?.notificationOccurred("success");
+      saveState();
       render();
-    });
-  }
-const OWNER_USERNAME = "marvel"; 
+    }
 
-function isOwner() {
-  const username = tg?.initDataUnsafe?.user?.username?.toLowerCase();
-  return username === OWNER_USERNAME.toLowerCase();
-}
+    function itemCard(item, label, action, showSeller = false) {
+      const art = item.image
+        ? `<img src="${escapeHtml(item.image)}" alt="" style="width:100%;height:100%;object-fit:cover">`
+        : escapeHtml(item.emoji || "🖼️");
 
-function addImageToCatalog(item) {
-  if (!isOwner()) {
-    alert("Добавлять картинки может только владелец.");
-    return false;
-  }
-
-  if (!item?.name || !item?.imageUrl) {
-    alert("Укажите название и ссылку на картинку.");
-    return false;
-  }
-
-
-  state.items.push({
-    id: Date.now(),
-    name: item.name.trim(),
-    imageUrl: item.imageUrl.trim(),
-    price: Number(item.price) || 0,
-    owner: OWNER_USERNAME
-  });
-
-  render();
-  return true;
-}
-
-function listExistingItemForSale(itemId, price) {
-  const item = state.items.find(item => item.id === Number(itemId));
-
-  if (!item) {
-    alert("Картинка не найдена в каталоге.");
-    return false;
-  }
-
-  item.listed = true;
-  item.salePrice = Number(price);
-
-  render();
-  return true;
-}
-  function renderProfile(section = "overview") {
-    const user = tg?.initDataUnsafe?.user;
-    const displayName = user
-      ? [user.first_name, user.last_name].filter(Boolean).join(" ")
-      : state.username;
-    const isOwner = user?.id === 1780243242;
-    const ownerCrown = isOwner ? " 👑" : "";
-    const avatar = state.avatar
-        ? `<img src="${escapeAttr(state.avatar)}" alt=""
-          style="width:62px;height:62px;border-radius:50%;object-fit:cover">`
-      : `<div class="avatar">👤</div>`;
-
-    const myItems = state.items.filter(item => item.owner === "me");
-    const sectionNames = {
-      overview: "Профиль",
-      items: "Мои NFT",
-      deals: "История операций"
-    };
-
-    let sectionContent = "";
-
-    if (section === "items") {
-      sectionContent = myItems.length
-        ? `<div class="grid">
-            ${myItems.map(item =>
-              item.active
-                ? itemCard(item, "Снять с продажи", "remove")
-                : itemCard(item, "Выставить", "list")
-            ).join("")}
-          </div>`
-        : '<div class="empty">У вас пока нет NFT.</div>';
-    } else if (section === "deals") {
-      sectionContent = state.deals.length
-        ? `<div class="panel">
-            ${state.deals.map(deal => `
-              <p>
-                ${escapeHtml(deal.type)}: <strong>${escapeHtml(deal.name)}</strong>
-                — ⭐ ${deal.price}
-                <span class="muted">(${escapeHtml(deal.date)})</span>
-              </p>
-            `).join("")}
-          </div>`
-        : '<div class="empty">Операций пока нет.</div>';
-    } else {
-      sectionContent = `
-        <div class="panel">
-          <div class="profile-top">
-            ${avatar}
-            <div>
-              <h2 style="margin:0 0 4px">${escapeHtml(displayName)}</h2>
-              <div class="muted">@${escapeHtml(state.username)}</div>
+      return `
+        <article class="card">
+          <div class="art">${art}</div>
+          <div class="card-body">
+            <div class="card-title-row">
+              <div>
+                <h3>${escapeHtml(item.name)}</h3>
+                <div class="muted">${escapeHtml(item.collection)}</div>
+              </div>
+              <span class="rarity">◆ ${Number(item.rarity) || 0}</span>
             </div>
+            <div class="card-footer">
+              <div class="price">⭐ ${Number(item.price) || 0}</div>
+              <button class="button small-button" data-action="${action}" data-id="${item.id}">
+                ${escapeHtml(label)}
+              </button>
+            </div>
+            ${showSeller ? '<div class="notice">Продавец: пользователь</div>' : ""}
           </div>
-          <div>Баланс: <strong>⭐ ${state.balance}</strong></div>
-          <div class="notice">
-            Это демо-профиль. Покупки здесь не списывают реальные Telegram Stars.
+        </article>`;
+    }
+
+    function renderCatalog() {
+      const collections = [...new Set(
+        state.items.filter(item => item.active).map(item => item.collection)
+      )];
+
+      content.innerHTML = `
+        <div class="toolbar">
+          <h1>Каталог</h1>
+          <div class="filters">
+            <select class="sort" id="collectionFilter">
+              <option value="all">Все коллекции</option>
+              ${collections.map(name =>
+                `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`
+              ).join("")}
+            </select>
+            <select class="sort" id="sortFilter">
+              <option value="new">Сначала новые</option>
+              <option value="priceUp">Цена: сначала ниже</option>
+              <option value="priceDown">Цена: сначала выше</option>
+              <option value="rarity">По редкости</option>
+            </select>
           </div>
+        </div>
+        <div class="grid" id="itemGrid"></div>`;
+
+      const collectionFilter = document.getElementById("collectionFilter");
+      const sortFilter = document.getElementById("sortFilter");
+      collectionFilter.value = state.collectionFilter || "all";
+
+      function updateGrid() {
+        state.collectionFilter = collectionFilter.value;
+        let items = state.items.filter(item => item.active
+          && (state.collectionFilter === "all" || item.collection === state.collectionFilter));
+
+        const sort = sortFilter.value;
+        if (sort === "priceUp") items.sort((a, b) => a.price - b.price);
+        if (sort === "priceDown") items.sort((a, b) => b.price - a.price);
+        if (sort === "rarity") items.sort((a, b) => b.rarity - a.rarity);
+        if (sort === "new") items.sort((a, b) => b.id - a.id);
+
+        const grid = document.getElementById("itemGrid");
+        grid.innerHTML = items.length
+          ? items.map(item => itemCard(item, "Купить", "buy", true)).join("")
+          : '<div class="empty">В этой коллекции пока нет товаров.</div>';
+      }
+
+      collectionFilter.addEventListener("change", updateGrid);
+      sortFilter.addEventListener("change", updateGrid);
+      updateGrid();
+    }
+
+    function renderCollections() {
+      const collections = [...new Set(
+        state.items.filter(item => item.active).map(item => item.collection)
+      )];
+
+      content.innerHTML = `
+        <h1>Коллекции</h1>
+        <div class="grid section-title">
+          ${collections.length ? collections.map((name, index) => {
+            const count = state.items.filter(item => item.active && item.collection === name).length;
+            const icons = ["🌌", "✨", "🌿", "💎", "🎨"];
+            return `
+              <button class="panel collection-tile" data-action="open-collection"
+                      data-collection="${escapeHtml(name)}">
+                <div class="collection-icon">${icons[index % icons.length]}</div>
+                <h3>${escapeHtml(name)}</h3>
+                <div class="muted">${count} ${count === 1 ? "предмет" : "предметов"}</div>
+              </button>`;
+          }).join("") : '<div class="empty">Коллекций пока нет.</div>'}
         </div>`;
     }
 
-    content.innerHTML = `
-      <div class="toolbar"><h1>${sectionNames[section] || "Профиль"}</h1></div>
-      <div class="profile-links">
-        <button class="secondary" data-profile-section="overview">Обзор профиля</button>
-        <button class="secondary" data-profile-section="items">Мои NFT (${myItems.length})</button>
-        <button class="secondary" data-profile-section="deals">История операций</button>
-      </div>
-      <div style="margin-top:18px">${sectionContent}</div>`;
-  }
+    function renderSell() {
+      const ownedItems = state.owned.filter(item => !item.active);
 
-  function render() {
-    balanceNode.textContent = state.balance;
-
-    if (state.page === "catalog") renderCatalog();
-    else if (state.page === "collections") renderCollections();
-    else if (state.page === "sell") renderSell();
-    else if (state.page === "profile") renderProfile();
-  }
-
-  content.addEventListener("click", event => {
-    const sectionButton = event.target.closest("[data-profile-section]");
-    if (sectionButton) {
-      renderProfile(sectionButton.dataset.profileSection);
-      return;
+      content.innerHTML = `
+        <h1>Продажи</h1>
+        <div class="notice">
+          Здесь отображаются ваши предметы. Выставление на продажу — демонстрационный режим.
+        </div>
+        ${isOwner ? `
+          <section class="panel section-title">
+            <h2>Добавить предмет в инвентарь</h2>
+            <form class="upload-form" id="uploadForm">
+              <input class="input" name="name" placeholder="Название предмета" required maxlength="60">
+              <input class="input" name="collection" placeholder="Название коллекции" required maxlength="40">
+              <input class="input" name="rarity" type="number" min="1" max="100" placeholder="Редкость (1–100)" required>
+              <input class="input" name="price" type="number" min="1" placeholder="Цена в Stars" required>
+              <input class="input" name="image" type="file" accept="image/*">
+              <button class="button" type="submit">Добавить в инвентарь</button>
+            </form>
+          </section>` : ""}
+        <h2 class="section-title">Мои предметы</h2>
+        <div class="grid">
+          ${ownedItems.length
+            ? ownedItems.map(item => itemCard(item, "Выставить", "sell")).join("")
+            : '<div class="empty">У вас пока нет предметов для продажи.</div>'}
+        </div>`;
     }
 
-    const actionButton = event.target.closest("[data-action]");
-    if (!actionButton) return;
+    function renderProfile() {
+      const userName = telegramUser?.first_name ||
+        (telegramUser?.username ? `@${telegramUser.username}` : "Гость");
+      const avatar = telegramUser?.photo_url
+        ? `<img src="${escapeHtml(telegramUser.photo_url)}" alt="">`
+        : "👤";
 
-    const item = state.items.find(
-      current => current.id === Number(actionButton.dataset.id)
-    );
-    if (!item) return;
+      const tabs = [
+        ["overview", "Обзор"],
+        ["inventory", "Инвентарь"],
+        ["deals", "История"]
+      ];
 
-    const action = actionButton.dataset.action;
+      let sectionContent = "";
 
-    if (action === "buy") {
-      if (item.owner === "me") {
-        alert("Эта работа уже принадлежит вам.");
-        return;
+      if (state.profileSection === "inventory") {
+        sectionContent = `
+          <div class="grid">
+            ${state.owned.length
+              ? state.owned.map(item => itemCard(
+                  item,
+                  item.active ? "На продаже" : "В инвентаре",
+                  "none"
+                )).join("")
+              : '<div class="empty">Инвентарь пока пуст.</div>'}
+          </div>`;
+      } else if (state.profileSection === "deals") {
+        sectionContent = `
+          <div class="panel">
+            ${state.deals.length
+              ? [...state.deals].reverse().map(deal => `
+                  <div class="deal">
+                    <div>
+                      <strong>${escapeHtml(deal.name)}</strong>
+                      <div class="muted">${escapeHtml(deal.type)} · ${escapeHtml(deal.date)}</div>
+                    </div>
+                    <span class="price">⭐ ${Number(deal.price) || 0}</span>
+                  </div>`).join("")
+              : '<div class="empty">История пока пуста.</div>'}
+          </div>`;
+      } else {
+        sectionContent = `
+          <div class="stats">
+            <div class="stat"><strong>${state.owned.length}</strong><span>Предметов</span></div>
+            <div class="stat"><strong>${state.deals.length}</strong><span>Сделок</span></div>
+            <div class="stat"><strong>⭐ ${state.balance}</strong><span>Баланс</span></div>
+          </div>
+          <div class="panel">
+            <h3>Добро пожаловать в BlueMarket</h3>
+            <div class="muted">Покупки и продажи здесь работают в демонстрационном режиме.</div>
+          </div>`;
       }
 
-      if (state.balance < item.price) {
-        alert("Недостаточно Stars для покупки.");
-        return;
-      }
+      content.innerHTML = `
+        <h1>Профиль</h1>
+        <div class="panel section-title">
+          <div class="profile-head">
+            <div class="avatar">${avatar}</div>
+            <div>
+              <div class="profile-name">
+                <h3>${escapeHtml(userName)}</h3>
+                ${isOwner ? '<span class="crown" title="Владелец">👑</span>' : ""}
+              </div>
+              <div class="muted">${telegramUser?.username
+                ? `@${escapeHtml(telegramUser.username)}`
+                : "Пользователь BlueMarket"}</div>
+            </div>
+          </div>
+        </div>
+        <div class="profile-tabs">
+          ${tabs.map(([key, label]) => `
+            <button class="profile-tab ${state.profileSection === key ? "active" : ""}"
+                    data-section="${key}">${label}</button>`).join("")}
+        </div>
+        ${sectionContent}`;
+    }
 
-      if (!confirm(`Купить «${item.name}» за ⭐ ${item.price}?`)) return;
+    function render() {
+      updateBalance();
 
-      state.balance -= item.price;
-      item.owner = "me";
-      item.active = false;
-      state.deals.unshift({
-        type: "Покупка",
+      if (state.page === "collections") renderCollections();
+      else if (state.page === "sell") renderSell();
+      else if (state.page === "profile") renderProfile();
+      else renderCatalog();
+    }
+
+    function addDeal(type, item) {
+      state.deals.push({
+        type,
         name: item.name,
-        price: item.price,
+        price: Number(item.price) || 0,
         date: new Date().toLocaleDateString("ru-RU")
       });
-    } else if (action === "remove") {
-      item.active = false;
-    } else if (action === "list") {
-      item.active = true;
     }
 
-    tg?.HapticFeedback?.notificationOccurred("success");
+    document.querySelector(".bottom-nav").addEventListener("click", event => {
+      const button = event.target.closest("[data-page]");
+      if (button) setPage(button.dataset.page);
+    });
+
+    content.addEventListener("click", event => {
+      const sectionButton = event.target.closest("[data-section]");
+      if (sectionButton) {
+        state.profileSection = sectionButton.dataset.section;
+        saveState();
+        renderProfile();
+        return;
+      }
+
+      const button = event.target.closest("[data-action]");
+      if (!button) return;
+
+      const action = button.dataset.action;
+
+      if (action === "open-collection") {
+        state.collectionFilter = button.dataset.collection;
+        setPage("catalog");
+        return;
+      }
+
+      const item = state.items.find(entry => String(entry.id) === button.dataset.id);
+      if (!item) return;
+
+      if (action === "buy") {
+        if (!item.active) return;
+        if (item.owner === currentUsername) {
+          alert("Нельзя купить собственный предмет.");
+          return;
+        }
+        if (state.balance < Number(item.price)) {
+          alert("Недостаточно Stars для покупки.");
+          return;
+        }
+
+        state.balance -= Number(item.price);
+        item.active = false;
+        item.owner = currentUsername;
+        state.owned.push({ ...item });
+        addDeal("Покупка", item);
+        saveState();
+        render();
+        alert("Демо-покупка завершена. Реальная оплата не выполнялась.");
+      }
+
+      if (action === "sell") {
+        const price = Number(prompt("Укажите цену в Stars:", item.price));
+        if (!Number.isFinite(price) || price <= 0) return;
+
+        item.price = Math.floor(price);
+        item.active = true;
+        item.owner = currentUsername;
+
+        const ownedItem = state.owned.find(entry => String(entry.id) === String(item.id));
+        if (ownedItem) {
+          ownedItem.price = item.price;
+          ownedItem.active = true;
+        }
+
+        addDeal("Выставление на продажу", item);
+        saveState();
+        render();
+      }
+    });
+
+    content.addEventListener("submit", event => {
+      if (event.target.id !== "uploadForm") return;
+      event.preventDefault();
+
+      if (!isOwner) {
+        alert("Добавлять предметы может только владелец.");
+        return;
+      }
+
+      const form = event.target;
+      const file = form.elements.image.files[0];
+
+      function createItem(imageData = "") {
+        const newItem = {
+          id: Date.now(),
+          name: form.elements.name.value.trim(),
+          collection: form.elements.collection.value.trim(),
+          rarity: Math.max(1, Math.min(100, Number(form.elements.rarity.value))),
+          price: Math.max(1, Number(form.elements.price.value)),
+          emoji: "🖼️",
+          image: imageData,
+          owner: currentUsername,
+          active: false
+        };
+
+        if (!newItem.name || !newItem.collection || !newItem.price) {
+          alert("Проверьте заполнение формы.");
+          return;
+        }
+
+        state.items.push(newItem);
+        state.owned.push({ ...newItem });
+        saveState();
+        renderSell();
+      }
+
+      if (file) {
+        if (!file.type.startsWith("image/")) {
+          alert("Выберите файл изображения.");
+          return;
+        }
+        if (file.size > 1_500_000) {
+          alert("Изображение слишком большое. Максимальный размер — 1,5 МБ.");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => createItem(String(reader.result || ""));
+        reader.onerror = () => alert("Не удалось прочитать изображение.");
+        reader.readAsDataURL(file);
+      } else {
+        createItem();
+      }
+    });
+
     render();
-  });
-
-  function escapeHtml(value) {
-    return String(value).replace(/[&<>"']/g, character => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[character]);
-  }
-
-  function escapeAttr(value) {
-    return escapeHtml(value);
-  }
-
-  render();
-</script>
+  </script>
 </body>
 </html>
-  
