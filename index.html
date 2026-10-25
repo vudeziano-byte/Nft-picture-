@@ -328,7 +328,51 @@
       render();
     });
   }
+const OWNER_USERNAME = "marvel"; 
 
+function isOwner() {
+  const username = tg?.initDataUnsafe?.user?.username?.toLowerCase();
+  return username === OWNER_USERNAME.toLowerCase();
+}
+
+function addImageToCatalog(item) {
+  if (!isOwner()) {
+    alert("Добавлять картинки может только владелец.");
+    return false;
+  }
+
+  if (!item?.name || !item?.imageUrl) {
+    alert("Укажите название и ссылку на картинку.");
+    return false;
+  }
+
+
+  state.items.push({
+    id: Date.now(),
+    name: item.name.trim(),
+    imageUrl: item.imageUrl.trim(),
+    price: Number(item.price) || 0,
+    owner: OWNER_USERNAME
+  });
+
+  render();
+  return true;
+}
+
+function listExistingItemForSale(itemId, price) {
+  const item = state.items.find(item => item.id === Number(itemId));
+
+  if (!item) {
+    alert("Картинка не найдена в каталоге.");
+    return false;
+  }
+
+  item.listed = true;
+  item.salePrice = Number(price);
+
+  render();
+  return true;
+}
   function renderProfile(section = "overview") {
     const user = tg?.initDataUnsafe?.user;
     const displayName = user
