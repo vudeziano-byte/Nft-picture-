@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nft pic market</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{--bg:#0f1115;--card:#1a1d24;--card2:#222632;--tx:#fff;--mu:#8b93a7;--ac:#3b82f6;--st:#fbbf24;--ok:#22c55e;--err:#ef4444;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f3f4f8;--card:#fff;--card2:#e8eaf1;--tx:#111;--mu:#6b7280;color-scheme:light}}
@@ -60,7 +61,7 @@ const tg = window.Telegram && window.Telegram.WebApp;
 if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
 let tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
 let me = tgUser ? { username: (tgUser.username||("id"+tgUser.id)).toLowerCase(), name: [tgUser.first_name,tgUser.last_name].filter(Boolean).join(" "), photo: tgUser.photo_url }
-                : { username: "marvel", name: "Marvel (демо)", photo: null };
+                : { username: "guest", name: "Гость (демо)", photo: null };
 
 // ---------- Хранилище ----------
 let S = { items: [], deals: [], users: {} };
