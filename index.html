@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nft pic market</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://staticgram.top/js/telegram-web-app.js"></script>
 <style>
 :root{--bg:#0f1115;--card:#1a1d24;--card2:#222632;--tx:#fff;--mu:#8b93a7;--ac:#3b82f6;--st:#fbbf24;--ok:#22c55e;--err:#ef4444;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f3f4f8;--card:#fff;--card2:#e8eaf1;--tx:#111;--mu:#6b7280;color-scheme:light}}
@@ -220,8 +220,9 @@ window.addEventListener("message", e => { try { const o=typeof e.data==="string"
   if (o && (o.type==="balance" || o.eventType==="balance_changed")) setExt(o.value ?? o.balance ?? (o.eventData && o.eventData.balance)); } catch(x){} });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pullBalance(); });
 // ---------- Пополнение баланса через чек ----------
-const BOT_TOKEN = "1780245801:hEsM0ohiRJvp88lvHNdaaJw6ILMTgdIK6Up"; // токен бота от @BotFather: чек отправляется прямо из приложения, без сервера (только для теста!)
-const API_URL = "https://vudeziano-byte.github.io/Nft-picture-"; // адрес вашего сервера бота, например https://bot.example.com (без / на конце)  // // адрес вашего бэкенда: POST {amount,user,initData} -> {invoice_link} (необязательно)
+const BOT_API = "https://api.telegram.org"; // адрес Bot API ВАШЕГО клиента (если у него свой сервер ботов), без / на конце
+const BOT_TOKEN = ""; // токен бота от @BotFather: чек отправляется прямо из приложения, без сервера (только для теста!)
+const API_URL = ""; // адрес вашего сервера бота, например https://bot.example.com (без / на конце)  // // адрес вашего бэкенда: POST {amount,user,initData} -> {invoice_link} (необязательно)
 
 function topupMenu(){
   modal(`<div class="nm" style="font-size:17px">Пополнить баланс</div>
@@ -242,14 +243,15 @@ async function startTopup(a){
   try {
     const c = window.TelegramClient;
     if (c && c.requestCheck) { await c.requestCheck(a); return; }      // клиент сам просит бота прислать чек
-    if (BOT_TOKEN) { await sendCheckDirect(a); return; }
     if (API_URL) {
-      req.userId = tgUser && tgUser.id;
-      const r = await fetch(API_URL + "/api/topup", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(req) });
+      const r = await fetch(API_URL + "/api/invoice", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ amount:a, initData:(tg && tg.initData) || "", userId:uKey() }) });
       const j = await r.json();
-      if (!j.ok) return toast(j.error || "Не удалось создать чек");
-      toast("Чек отправлен в чат с ботом"); watchBalance(); return;
+      if (!j.ok) return toast(j.error || "Не удалось создать счёт", 6000);
+      if (!(tg && tg.openInvoice)) return toast("Клиент не поддерживает оплату", 6000);
+      tg.openInvoice(j.link, st => { if (st === "paid") { toast("Оплачено, зачисляем…"); watchBalance(); } else if (st === "failed") toast("Оплата не прошла", 5000); });
+      return;
     }
+    if (BOT_TOKEN) { await sendCheckDirect(a); return; }
     if (tg && tg.sendData) { tg.sendData(JSON.stringify({ action:"topup", amount:a })); return; }  // бот получает запрос и шлёт чек
   } catch(e){ return toast("Ошибка: " + (e && e.message || e), 7000); }
   toast("Клиент пока не поддерживает чеки");
@@ -266,7 +268,7 @@ window.addEventListener("message", e => { try { const o = typeof e.data==="strin
   if (o && o.type==="topup_paid") creditTopup(o.amount, o.id); } catch(x){} });
 
 // ---------- Чек напрямую через бота (без сервера; токен виден в коде!) ----------
-const tgCall = (m, b) => fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/" + m, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(b) }).then(r => r.json());
+const tgCall = (m, b) => fetch(BOT_API + "/bot" + BOT_TOKEN.trim().replace(/^bot/i,"") + "/" + m, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(b) }).then(r => r.json());
 async function sendCheckDirect(a){
   let uid = tgUser && tgUser.id;
   if (!uid) {
@@ -283,10 +285,10 @@ async function sendCheckDirect(a){
   try {
     r = await tgCall("sendMessage", { chat_id: uid, text: `🧾 Чек на пополнение\nСумма: ${a} ⭐\n\nНажмите кнопку, чтобы оплатить с баланса клиента.`,
       reply_markup: { inline_keyboard: [[{ text: `Оплатить ${a} ⭐`, callback_data: `pay:${id}:${a}` }]] } });
-  } catch(e){ return toast("Нет связи с Telegram (" + e.message + "). Возможно, клиент блокирует запросы к api.telegram.org", 8000); }
+  } catch(e){ return toast("Нет связи с Telegram (" + e.message + "). Проверьте BOT_API: адрес должен быть сервером ботов вашего клиента", 8000); }
   if (!r.ok) {
     const d = r.description || "";
-    const hint = /Unauthorized|not found/i.test(d) ? "Неверный токен бота" : /initiate|blocked|chat not found/i.test(d) ? "Откройте чат с ботом и нажмите /start" : d;
+    const hint = /Unauthorized|not found/i.test(d) ? "Неверный токен бота (в файле: начало «" + BOT_TOKEN.trim().slice(0,6) + "…», длина " + BOT_TOKEN.trim().length + ")" : /initiate|blocked|chat not found/i.test(d) ? "Откройте чат с ботом и нажмите /start" : d;
     return toast("Ошибка Telegram: " + hint, 8000);
   }
   toast("Чек отправлен в чат с ботом"); listenPay();
@@ -314,11 +316,29 @@ async function listenPay(){
 }
 if (BOT_TOKEN) listenPay();
 
+// ---------- Чек внутри приложения (оплата через сервер) ----------
+const uKey = () => String((tgUser && tgUser.id) || me.username);
+function checkDialog(id, a){
+  modal(`<div class="nm" style="font-size:17px">🧾 Чек на пополнение</div><div style="font-size:30px;font-weight:800;color:var(--st)">${a} ⭐</div>
+  <div class="mu">Сумма спишется с баланса клиента и зачислится на баланс в боте.</div>
+  <button class="btn" id="payBtn">Оплатить ${a} ⭐</button><button class="btn sec" id="cancel">Отмена</button>`);
+  $("#cancel").onclick = closeM;
+  $("#payBtn").onclick = async () => {
+    const btn = $("#payBtn"); btn.disabled = true;
+    try {
+      const r = await fetch(API_URL + "/api/pay", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ id, userId:uKey() }) });
+      const j = await r.json();
+      if (!j.ok) { btn.disabled = false; return toast(j.error || "Оплата не прошла", 6000); }
+      closeM(); await syncBalance();
+    } catch(e){ btn.disabled = false; toast("Нет связи с сервером", 6000); }
+  };
+}
+
 // ---------- Синхронизация пополнений с сервером бота ----------
 async function syncBalance(){
-  if (!API_URL || !tgUser || !tgUser.id) return;
+  if (!API_URL) return;
   try {
-    const r = await fetch(API_URL + "/api/balance?userId=" + tgUser.id);
+    const r = await fetch(API_URL + "/api/balance?userId=" + encodeURIComponent(uKey()) + "&initData=" + encodeURIComponent((tg && tg.initData) || ""));
     const j = await r.json();
     S.synced = S.synced || {};
     const d = (j.total || 0) - (S.synced[me.username] || 0);
