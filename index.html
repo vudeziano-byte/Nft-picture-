@@ -59,7 +59,33 @@ input,select{background:var(--card2);color:var(--tx);border:0;border-radius:12px
 const OWNER = "marvel"; // единственный, кто может создавать новые NFT
 const tg = window.Telegram && window.Telegram.WebApp;
 if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
-let tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+// Чтение профиля: подходит и для кастомных клиентов (разные способы передачи данных)
+function parseUserFrom(str){
+  try {
+    const p = new URLSearchParams(str);
+    let raw = p.get("user");
+    const d = p.get("tgWebAppData");
+    if (!raw && d) raw = new URLSearchParams(d).get("user");
+    if (raw) return JSON.parse(raw);
+    if (p.get("username") || p.get("first_name")) // запасной вариант: параметры прямо в ссылке
+      return { id: p.get("id"), username: p.get("username"), first_name: p.get("first_name"), last_name: p.get("last_name"), photo_url: p.get("photo_url") };
+  } catch(e){}
+  return null;
+}
+function readUser(){
+  let u = null;
+  try { u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user; } catch(e){}
+  if (!u) try { if (tg && tg.initData) u = parseUserFrom(tg.initData); } catch(e){}
+  if (!u) try { const ip = window.Telegram && Telegram.WebView && Telegram.WebView.initParams; if (ip) u = parseUserFrom("tgWebAppData=" + encodeURIComponent(ip.tgWebAppData||"")); } catch(e){}
+  if (!u) u = parseUserFrom(location.hash.slice(1)) || parseUserFrom(location.search.slice(1));
+  try {
+    if (u) sessionStorage.setItem("npm_user", JSON.stringify(u));
+    else { const s = sessionStorage.getItem("npm_user"); if (s) u = JSON.parse(s); }
+  } catch(e){}
+  if (u && u.username) u.username = String(u.username).replace("@","");
+  return u;
+}
+let tgUser = readUser();
 let me = tgUser ? { username: (tgUser.username||("id"+tgUser.id)).toLowerCase(), name: [tgUser.first_name,tgUser.last_name].filter(Boolean).join(" "), photo: tgUser.photo_url }
                 : { username: "guest", name: "Гость (демо)", photo: null };
 
