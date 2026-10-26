@@ -102,7 +102,7 @@ const isOwner = () => me.username === OWNER;
 let view = "main", mainTab = "catalog", profTab = "assets", colFilter = null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function toast(t){ const e=$("#toast"); e.textContent=t; e.classList.remove("hide"); clearTimeout(toast.t); toast.t=setTimeout(()=>e.classList.add("hide"),2200); }
+function toast(t,ms){ const e=$("#toast"); e.textContent=t; e.classList.remove("hide"); clearTimeout(toast.t); toast.t=setTimeout(()=>e.classList.add("hide"),ms||2200); }
 
 function card(it, mode){
   const act = mode==="shop" ? (it.owner===me.username ? `<div class="mu" style="padding:0 10px 10px">Ваш лот</div>` : `<button class="btn sm" data-buy="${it.id}">Купить</button>`)
@@ -251,7 +251,7 @@ async function startTopup(a){
       toast("Чек отправлен в чат с ботом"); watchBalance(); return;
     }
     if (tg && tg.sendData) { tg.sendData(JSON.stringify({ action:"topup", amount:a })); return; }  // бот получает запрос и шлёт чек
-  } catch(e){ return toast("Не удалось создать чек"); }
+  } catch(e){ return toast("Ошибка: " + (e && e.message || e), 7000); }
   toast("Клиент пока не поддерживает чеки");
 }
 
@@ -268,11 +268,27 @@ window.addEventListener("message", e => { try { const o = typeof e.data==="strin
 // ---------- Чек напрямую через бота (без сервера; токен виден в коде!) ----------
 const tgCall = (m, b) => fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/" + m, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(b) }).then(r => r.json());
 async function sendCheckDirect(a){
-  if (!tgUser || !tgUser.id) return toast("Не удалось определить ваш аккаунт");
+  let uid = tgUser && tgUser.id;
+  if (!uid) {
+    try { uid = localStorage.getItem("npm_uid"); } catch(e){}
+    if (!uid) {
+      uid = (prompt("Клиент не передал ваш Telegram ID. Введите его (узнать можно у бота @userinfobot):") || "").trim();
+      if (!/^\d+$/.test(uid)) return toast("Нужен числовой ID, только цифры", 5000);
+      try { localStorage.setItem("npm_uid", uid); } catch(e){}
+    }
+    tgUser = tgUser || {}; tgUser.id = uid;
+  }
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-  const r = await tgCall("sendMessage", { chat_id: tgUser.id, text: `🧾 Чек на пополнение\nСумма: ${a} ⭐\n\nНажмите кнопку, чтобы оплатить с баланса клиента.`,
-    reply_markup: { inline_keyboard: [[{ text: `Оплатить ${a} ⭐`, callback_data: `pay:${id}:${a}` }]] } });
-  if (!r.ok) return toast("Бот не смог написать. Откройте чат с ботом и нажмите /start");
+  let r;
+  try {
+    r = await tgCall("sendMessage", { chat_id: uid, text: `🧾 Чек на пополнение\nСумма: ${a} ⭐\n\nНажмите кнопку, чтобы оплатить с баланса клиента.`,
+      reply_markup: { inline_keyboard: [[{ text: `Оплатить ${a} ⭐`, callback_data: `pay:${id}:${a}` }]] } });
+  } catch(e){ return toast("Нет связи с Telegram (" + e.message + "). Возможно, клиент блокирует запросы к api.telegram.org", 8000); }
+  if (!r.ok) {
+    const d = r.description || "";
+    const hint = /Unauthorized|not found/i.test(d) ? "Неверный токен бота" : /initiate|blocked|chat not found/i.test(d) ? "Откройте чат с ботом и нажмите /start" : d;
+    return toast("Ошибка Telegram: " + hint, 8000);
+  }
   toast("Чек отправлен в чат с ботом"); listenPay();
 }
 let listening = false, upOff = 0;
