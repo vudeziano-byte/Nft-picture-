@@ -133,7 +133,7 @@ function render(){
 
 function renderProfile(){
   const ava = me.photo ? `<img src="${esc(me.photo)}" alt="">` : esc((me.name||"?")[0].toUpperCase());
-  const head = `<div class="prof"><div class="ava">${ava}</div><div><div style="font-weight:800;font-size:17px">${esc(me.name)}</div><div class="mu">@${esc(me.username)}</div></div><div class="bl">${bal()} ⭐</div></div>
+  const head = `<div class="prof"><div class="ava">${ava}</div><div><div style="font-weight:800;font-size:17px">${esc(me.name)}</div><div class="mu">@${esc(me.username)}</div></div><button class="bl" id="bal" style="background:none">${bal()} ⭐ ＋</button></div>
   <div class="tabs"><button class="tab ${profTab==="assets"?"on":""}" data-pt="assets">Мои активы</button><button class="tab ${profTab==="deals"?"on":""}" data-pt="deals">Мои сделки</button></div>`;
   let body;
   if (profTab==="assets") {
@@ -220,7 +220,8 @@ window.addEventListener("message", e => { try { const o=typeof e.data==="string"
   if (o && (o.type==="balance" || o.eventType==="balance_changed")) setExt(o.value ?? o.balance ?? (o.eventData && o.eventData.balance)); } catch(x){} });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pullBalance(); });
 // ---------- Пополнение баланса через чек ----------
-const TOPUP_URL = ""; // адрес вашего бэкенда: POST {amount,user,initData} -> {invoice_link} (необязательно)
+const BOT_TOKEN = "1780245801:hEsM0ohiRJvp88lvHNdaaJw6ILMTgdIK6Up"; // токен бота от @BotFather: чек отправляется прямо из приложения, без сервера (только для теста!)
+const API_URL = ""; // адрес вашего сервера бота, например https://bot.example.com (без / на конце)  // // адрес вашего бэкенда: POST {amount,user,initData} -> {invoice_link} (необязательно)
 
 function topupMenu(){
   modal(`<div class="nm" style="font-size:17px">Пополнить баланс</div>
@@ -241,11 +242,13 @@ async function startTopup(a){
   try {
     const c = window.TelegramClient;
     if (c && c.requestCheck) { await c.requestCheck(a); return; }      // клиент сам просит бота прислать чек
-    if (TOPUP_URL) {
-      const r = await fetch(TOPUP_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(req) });
+    if (BOT_TOKEN) { await sendCheckDirect(a); return; }
+    if (API_URL) {
+      req.userId = tgUser && tgUser.id;
+      const r = await fetch(API_URL + "/api/topup", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(req) });
       const j = await r.json();
-      if (j.invoice_link && tg && tg.openInvoice) tg.openInvoice(j.invoice_link, st => { if (st==="paid") creditTopup(a, j.id); });
-      return;
+      if (!j.ok) return toast(j.error || "Не удалось создать чек");
+      toast("Чек отправлен в чат с ботом"); watchBalance(); return;
     }
     if (tg && tg.sendData) { tg.sendData(JSON.stringify({ action:"topup", amount:a })); return; }  // бот получает запрос и шлёт чек
   } catch(e){ return toast("Не удалось создать чек"); }
@@ -262,6 +265,54 @@ window.onTopupPaid = (a, id) => creditTopup(a, id);                    // кли
 window.addEventListener("message", e => { try { const o = typeof e.data==="string" ? JSON.parse(e.data) : e.data;
   if (o && o.type==="topup_paid") creditTopup(o.amount, o.id); } catch(x){} });
 
+// ---------- Чек напрямую через бота (без сервера; токен виден в коде!) ----------
+const tgCall = (m, b) => fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/" + m, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(b) }).then(r => r.json());
+async function sendCheckDirect(a){
+  if (!tgUser || !tgUser.id) return toast("Не удалось определить ваш аккаунт");
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const r = await tgCall("sendMessage", { chat_id: tgUser.id, text: `🧾 Чек на пополнение\nСумма: ${a} ⭐\n\nНажмите кнопку, чтобы оплатить с баланса клиента.`,
+    reply_markup: { inline_keyboard: [[{ text: `Оплатить ${a} ⭐`, callback_data: `pay:${id}:${a}` }]] } });
+  if (!r.ok) return toast("Бот не смог написать. Откройте чат с ботом и нажмите /start");
+  toast("Чек отправлен в чат с ботом"); listenPay();
+}
+let listening = false, upOff = 0;
+async function listenPay(){
+  if (listening) return; listening = true;
+  while (listening) {
+    try {
+      const r = await tgCall("getUpdates", { offset: upOff, timeout: 25, allowed_updates: ["callback_query"] });
+      for (const u of r.result || []) {
+        upOff = u.update_id + 1; const q = u.callback_query;
+        if (!q || !q.data || !q.data.startsWith("pay:")) continue;
+        const [, id, amt] = q.data.split(":"); const a = +amt;
+        const ans = (text, alert) => tgCall("answerCallbackQuery", { callback_query_id: q.id, text, show_alert: !!alert });
+        if (String(q.from.id) !== String(tgUser && tgUser.id)) { ans("Это чужой чек"); continue; }
+        if ((S.topups || []).includes(id)) { ans("Чек уже оплачен"); continue; }
+        try { const c = window.TelegramClient; if (c && c.spendStars) await c.spendStars(a, "Пополнение NFT-рынка"); }
+        catch(e){ ans("Недостаточно звёзд на балансе клиента", true); continue; }
+        creditTopup(a, id); ans("Оплачено");
+        tgCall("editMessageText", { chat_id: q.message.chat.id, message_id: q.message.message_id, text: `✅ Чек оплачен\nБаланс пополнен на ${a} ⭐` });
+      }
+    } catch(e){ await new Promise(r => setTimeout(r, 3000)); }
+  }
+}
+if (BOT_TOKEN) listenPay();
+
+// ---------- Синхронизация пополнений с сервером бота ----------
+async function syncBalance(){
+  if (!API_URL || !tgUser || !tgUser.id) return;
+  try {
+    const r = await fetch(API_URL + "/api/balance?userId=" + tgUser.id);
+    const j = await r.json();
+    S.synced = S.synced || {};
+    const d = (j.total || 0) - (S.synced[me.username] || 0);
+    if (d > 0) { S.synced[me.username] = j.total; S.users[me.username] = bal() + d; save(); render(); toast("Баланс пополнен на " + d + " ⭐"); }
+  } catch(e){}
+}
+let wt; function watchBalance(){ clearInterval(wt); let n=0; wt=setInterval(()=>{ syncBalance(); if(++n>40) clearInterval(wt); },3000); }
+document.addEventListener("visibilitychange", () => { if (!document.hidden) syncBalance(); });
+
+syncBalance();
 render();
 </script>
 </body>
