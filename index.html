@@ -93,7 +93,8 @@ let me = tgUser ? { username: (tgUser.username||("id"+tgUser.id)).toLowerCase(),
 let S = { items: [], deals: [], users: {} };
 try { const raw = localStorage.getItem("npm_state"); if (raw) S = JSON.parse(raw); } catch(e){}
 function save(){ try { localStorage.setItem("npm_state", JSON.stringify(S)); } catch(e){ toast("Память заполнена"); } }
-function bal(){ if (S.users[me.username]==null) S.users[me.username]=1000; return S.users[me.username]; }
+let ext = null; // баланс из клиента (null = клиент баланс не передал)
+function bal(){ if (ext!=null) return ext; if (S.users[me.username]==null) S.users[me.username]=0; return S.users[me.username]; }
 const RAR = ["Обычная","Редкая","Эпическая","Легендарная"];
 const isOwner = () => me.username === OWNER;
 
@@ -185,7 +186,9 @@ function buy(id){
   const it = S.items.find(i=>i.id===id); if(!it||it.price==null) return toast("Лот недоступен");
   if(it.owner===me.username) return toast("Это ваш лот");
   if(bal()<it.price) return toast("Недостаточно звёзд");
-  const seller = it.owner; S.users[me.username]-=it.price; S.users[seller]=(S.users[seller]??1000)+it.price;
+  const seller = it.owner; if (ext!=null) { try { const c=window.TelegramClient; if (c && c.spendStars) c.spendStars(it.price, "NFT: "+it.name); } catch(e){} ext-=it.price; }
+  else S.users[me.username]-=it.price;
+  S.users[seller]=(S.users[seller]||0)+it.price;
   S.deals.push({ t:Date.now(), name:`${it.name} #${it.number}`, price:it.price, buyer:me.username, seller });
   it.owner=me.username; it.price=null; save(); render(); toast("Покупка успешна!");
 }
@@ -205,6 +208,17 @@ document.addEventListener("click", e => {
   else if (t.dataset.pt) { profTab=t.dataset.pt; render(); }
   else if (t.dataset.col) { colFilter=t.dataset.col; mainTab="catalog"; render(); }
 });
+// ---------- Синхронизация баланса с клиентом ----------
+function setExt(v){ v=Number(v); if (isFinite(v)) { ext=Math.max(0,Math.floor(v)); render(); } }
+function pullBalance(){
+  try { const u=tgUser||{}; if (u.balance!=null) setExt(u.balance); else if (u.stars!=null) setExt(u.stars); } catch(e){}
+  try { const p=new URLSearchParams(location.hash.slice(1)+"&"+location.search.slice(1)); const v=p.get("balance")||p.get("stars"); if (v!=null) setExt(v); } catch(e){}
+  try { const c=window.TelegramClient; if (c && c.getBalance) Promise.resolve(c.getBalance()).then(setExt).catch(()=>{}); } catch(e){}
+}
+window.addEventListener("message", e => { try { const o=typeof e.data==="string"?JSON.parse(e.data):e.data;
+  if (o && (o.type==="balance" || o.eventType==="balance_changed")) setExt(o.value ?? o.balance ?? (o.eventData && o.eventData.balance)); } catch(x){} });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pullBalance(); });
+pullBalance();
 render();
 </script>
 </body>
