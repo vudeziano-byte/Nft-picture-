@@ -221,7 +221,7 @@ window.addEventListener("message", e => { try { const o=typeof e.data==="string"
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pullBalance(); });
 // ---------- Пополнение баланса через чек ----------
 const BOT_TOKEN = "1780245801:hEsM0ohiRJvp88lvHNdaaJw6ILMTgdIK6Up"; // токен бота от @BotFather: чек отправляется прямо из приложения, без сервера (только для теста!)
-const API_URL = ""; // адрес вашего сервера бота, например https://bot.example.com (без / на конце)  // // адрес вашего бэкенда: POST {amount,user,initData} -> {invoice_link} (необязательно)
+const API_URL = "https://vudeziano-byte.github.io/Nft-picture-"; // адрес вашего сервера бота, например https://bot.example.com (без / на конце)  // // адрес вашего бэкенда: POST {amount,user,initData} -> {invoice_link} (необязательно)
 
 function topupMenu(){
   modal(`<div class="nm" style="font-size:17px">Пополнить баланс</div>
